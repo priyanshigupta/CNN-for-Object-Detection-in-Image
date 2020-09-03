@@ -1,0 +1,337 @@
+# -*- coding: utf-8 -*-
+"""
+Created on Sun Nov 17 14:12:20 2019
+
+@author: thakk
+"""
+
+# import the necessary packages
+from tensorflow.keras.models import Sequential
+from tensorflow.keras.layers import BatchNormalization
+from tensorflow.keras.layers import Conv2D
+from tensorflow.keras.layers import MaxPooling2D
+from tensorflow.keras.layers import Activation
+from tensorflow.keras.layers import Flatten
+from tensorflow.keras.layers import Dropout
+from tensorflow.keras.layers import Dense
+from tensorflow.keras import backend as K
+
+######
+from tensorflow.keras.models import Model
+from tensorflow.keras.layers import Input
+from tensorflow.keras.layers import concatenate
+######
+
+from tensorflow.keras.models import  model_from_json
+
+from tensorflow.keras.layers import  SeparableConv2D, UpSampling2D, GlobalAveragePooling2D
+
+from tensorflow.keras import backend as K
+
+
+class SmallerVGGNet:
+    @staticmethod
+    def build(width, height, depth, classes):
+        # initialize the model along with the input shape to be
+        # "channels last" and the channels dimension itselfLS
+        model = Sequential()
+        inputShape = (height, width, depth)
+        chanDim = -1
+ 
+        # if we are using "channels first", update the input shape
+        # and channels dimension
+        if K.image_data_format() == "channels_first":
+            inputShape = (depth, height, width)
+            chanDim = 1
+        
+        # CONV => RELU => POOL
+        model.add(Conv2D(32, (3, 3), padding="same",
+            input_shape=inputShape))
+        model.add(Activation("relu"))
+        model.add(BatchNormalization(axis=chanDim))
+        model.add(MaxPooling2D(pool_size=(3, 3)))
+        model.add(Dropout(0.25))
+        
+        # (CONV => RELU) * 2 => POOL
+        model.add(Conv2D(64, (3, 3), padding="same"))
+        model.add(Activation("relu"))
+        model.add(BatchNormalization(axis=chanDim))
+        model.add(Conv2D(64, (3, 3), padding="same"))
+        model.add(Activation("relu"))
+        model.add(BatchNormalization(axis=chanDim))
+        model.add(MaxPooling2D(pool_size=(2, 2)))
+        model.add(Dropout(0.25))
+        
+        # (CONV => RELU) * 2 => POOL
+        model.add(Conv2D(128, (3, 3), padding="same"))
+        model.add(Activation("relu"))
+        model.add(BatchNormalization(axis=chanDim))
+        model.add(Conv2D(128, (3, 3), padding="same"))
+        model.add(Activation("relu"))
+        model.add(BatchNormalization(axis=chanDim))
+        model.add(MaxPooling2D(pool_size=(2, 2)))
+        model.add(Dropout(0.25))
+        
+        # first (and only) set of FC => RELU layers
+        model.add(Flatten())
+        model.add(Dense(1024))
+        model.add(Activation("relu"))
+        model.add(BatchNormalization())
+        model.add(Dropout(0.5))
+ 
+        # softmax classifier
+        model.add(Dense(classes))
+        model.add(Activation("softmax"))
+ 
+        # return the constructed network architecture
+        return model
+    
+class VGG16:
+    @staticmethod
+    def build(width, height, depth, classes):
+        # initialize the model along with the input shape to be
+        # "channels last" and the channels dimension itself
+        model = Sequential()
+        inputShape = (height, width, depth)
+#       chanDim = -1
+ 
+        # if we are using "channels first", update the input shape
+        # and channels dimension
+        if K.image_data_format() == "channels_first":
+            inputShape = (depth, height, width)
+#           chanDim = 1
+        
+        # CONV => RELU => POOL
+#       model.add(Conv2D(input_shape=inputShape,filters=64,kernel_size=(3,3),padding="same", activation="relu"))
+#       model.add(Conv2D(filters=64,kernel_size=(3,3),padding="same", activation="relu"))
+#       model.add(MaxPooling2D(pool_size=(2,2),strides=(2,2)))
+#       model.add(Conv2D(filters=128, kernel_size=(3,3), padding="same", activation="relu"))
+#       model.add(Conv2D(filters=128, kernel_size=(3,3), padding="same", activation="relu"))
+#       model.add(MaxPooling2D(pool_size=(2,2),strides=(2,2)))
+#       model.add(Conv2D(filters=256, kernel_size=(3,3), padding="same", activation="relu"))
+#       model.add(Conv2D(filters=256, kernel_size=(3,3), padding="same", activation="relu"))
+#       model.add(Conv2D(filters=256, kernel_size=(3,3), padding="same", activation="relu"))
+#       model.add(MaxPooling2D(pool_size=(2,2),strides=(2,2)))
+#       model.add(Conv2D(filters=512, kernel_size=(3,3), padding="same", activation="relu"))
+#       model.add(Conv2D(filters=512, kernel_size=(3,3), padding="same", activation="relu"))
+#       model.add(Conv2D(filters=512, kernel_size=(3,3), padding="same", activation="relu"))
+#       model.add(MaxPooling2D(pool_size=(2,2),strides=(2,2)))
+#       model.add(Conv2D(filters=512, kernel_size=(3,3), padding="same", activation="relu"))
+#       model.add(Conv2D(filters=512, kernel_size=(3,3), padding="same", activation="relu"))
+#       model.add(Conv2D(filters=512, kernel_size=(3,3), padding="same", activation="relu"))
+#       model.add(MaxPooling2D(pool_size=(2,2),strides=(2,2)))
+#        
+#       model.add(Flatten())
+#       model.add(Dense(units=4096,activation="relu"))
+#       model.add(Dense(units=4096,activation="relu"))
+#       model.add(Dense(units=classes, activation="softmax"))
+        
+        
+        
+        #############
+        
+        # Reference: http://agnesmustar.com/2017/05/25/build-vgg16-scratch-part-ii/
+        
+        # Conv Block 1
+        model.add(Conv2D(64, (3, 3), input_shape=inputShape, activation='relu', padding='same'))
+        model.add(Conv2D(64, (3, 3), activation='relu', padding='same'))
+        model.add(MaxPooling2D(pool_size=(2, 2), strides=(2, 2)))
+        
+        # Conv Block 2
+        model.add(Conv2D(128, (3, 3), activation='relu', padding='same'))
+        model.add(Conv2D(128, (3, 3), activation='relu', padding='same'))
+        model.add(MaxPooling2D(pool_size=(2, 2), strides=(2, 2)))
+        
+        # Conv Block 3
+        model.add(Conv2D(256, (3, 3), activation='relu', padding='same'))
+        model.add(Conv2D(256, (3, 3), activation='relu', padding='same'))
+        model.add(Conv2D(256, (3, 3), activation='relu', padding='same'))
+        model.add(MaxPooling2D(pool_size=(2, 2), strides=(2, 2)))
+        
+        # Conv Block 4
+        model.add(Conv2D(512, (3, 3), activation='relu', padding='same'))
+        model.add(Conv2D(512, (3, 3), activation='relu', padding='same'))
+        model.add(Conv2D(512, (3, 3), activation='relu', padding='same'))
+        model.add(MaxPooling2D(pool_size=(2, 2), strides=(2, 2)))
+        
+        # Conv Block 5
+        model.add(Conv2D(512, (3, 3), activation='relu', padding='same'))
+        model.add(Conv2D(512, (3, 3), activation='relu', padding='same'))
+        model.add(Conv2D(512, (3, 3), activation='relu', padding='same'))
+        model.add(MaxPooling2D(pool_size=(2, 2), strides=(2, 2)))
+        
+        # FC layers
+        model.add(Flatten())
+        model.add(Dense(4096, activation='relu'))
+        model.add(Dense(4096, activation='relu'))
+        model.add(Dense(classes, activation='softmax'))
+                
+        
+        
+        ############
+        
+ 
+        # return the constructed network architecture
+        return model
+
+########################
+        
+class InceptionV3:
+    @staticmethod
+    
+    
+    # function for creating a projected inception module
+    def inception_module(Inpt_img, f1, f2_in, f2_out, f3_in, f3_out, f4_out):
+        # 1x1 conv
+        conv1 = Conv2D(f1, (1,1), padding='same', activation='relu')(Inpt_img)
+        # 3x3 conv
+        conv3 = Conv2D(f2_in, (1,1), padding='same', activation='relu')(Inpt_img)
+        conv3 = Conv2D(f2_out, (3,3), padding='same', activation='relu')(conv3)
+        # 5x5 conv
+        conv5 = Conv2D(f3_in, (1,1), padding='same', activation='relu')(Inpt_img)
+        conv5 = Conv2D(f3_out, (5,5), padding='same', activation='relu')(conv5)
+        # 3x3 max pooling
+        pool = MaxPooling2D((3,3), strides=(1,1), padding='same')(Inpt_img)
+        pool = Conv2D(f4_out, (1,1), padding='same', activation='relu')(pool)
+        # concatenate filters, assumes filters/channels last
+        layer_out = concatenate([conv1, conv3, conv5, pool], axis=-1)
+        return layer_out
+    
+    
+    def build(width, height, depth, classes):
+        
+#        inputShape = (height, width, depth)
+    
+        Inpt_img = Input(shape=(height, width, depth))
+         
+    
+        # add inception block 1
+        layer = InceptionV3.inception_module(Inpt_img, 64, 96, 128, 16, 32, 32)
+        # add inception block 1
+        layer = InceptionV3.inception_module(layer, 128, 128, 192, 32, 96, 64)
+        # create model
+        output = Flatten()(layer)
+        
+        out= Dense(classes, activation='softmax')(output)
+        model = Model(inputs=Inpt_img, outputs=out)
+        # summarize model
+        print(model.summary())
+        return model
+    
+    
+class Xception:
+    
+    
+    def entry_flow(inputs) :
+    
+        x = Conv2D(32, (3,3), strides = 2, padding='same')(inputs)
+        x = BatchNormalization()(x)
+        x = Activation('relu')(x)
+    
+        x = Conv2D(64,3,padding='same')(x)
+        x = BatchNormalization()(x)
+        x = Activation('relu')(x)
+    
+        previous_block_activation = x
+    
+        for size in [128, 256, 728] :
+    
+            x = Activation('relu')(x)
+            x = SeparableConv2D(size, 3, padding='same')(x)
+            x = BatchNormalization()(x)
+    
+            x = Activation('relu')(x)
+            x = SeparableConv2D(size, 3, padding='same')(x)
+            x = BatchNormalization()(x)
+    
+            x = MaxPooling2D(3, strides=2, padding='same')(x)
+    
+            residual = Conv2D(size, 1, strides=2, padding='same')(previous_block_activation)
+    
+            x = tensorflow.keras.layers.Add()([x, residual])
+            previous_block_activation = x
+    
+        return x
+    
+    
+    def middle_flow(x, num_blocks=8) :
+    
+        previous_block_activation = x
+    
+        for _ in range(num_blocks) :
+    
+            x = Activation('relu')(x)
+            x = SeparableConv2D(728, 3, padding='same')(x)
+            x = BatchNormalization()(x)
+    
+            x = Activation('relu')(x)
+            x = SeparableConv2D(728, 3, padding='same')(x)
+            x = BatchNormalization()(x)
+    
+            x = Activation('relu')(x)
+            x = SeparableConv2D(728, 3, padding='same')(x)
+            x = BatchNormalization()(x)
+    
+            x = tensorflow.keras.layers.Add()([x, previous_block_activation])
+            previous_block_activation = x
+    
+        return x
+    
+    
+    def exit_flow(x) :
+    
+        previous_block_activation = x
+    
+        x = Activation('relu')(x)
+        x = SeparableConv2D(728, 3, padding='same')(x)
+        x = BatchNormalization()(x)
+    
+        x = Activation('relu')(x)
+        x = SeparableConv2D(1024, 3, padding='same')(x) 
+        x = BatchNormalization()(x)
+    
+        x = MaxPooling2D(3, strides=2, padding='same')(x)
+    
+        residual = Conv2D(1024, 1, strides=2, padding='same')(previous_block_activation)
+        x = tensorflow.keras.layers.Add()([x, residual])
+    
+        x = Activation('relu')(x)
+        x = SeparableConv2D(728, 3, padding='same')(x)
+        x = BatchNormalization()(x)
+    
+        x = Activation('relu')(x)
+        x = SeparableConv2D(1024, 3, padding='same')(x)
+        x = BatchNormalization()(x)
+    
+        x = GlobalAveragePooling2D()(x)
+    
+        return x
+          
+    
+    def build(width, height, depth, classes):
+        # initialize the model along with the input shape to be
+        # "channels last" and the channels dimension itself
+        #model = Sequential()
+        inputShape = (height, width, depth)
+        chanDim = -1
+    
+        # if we are using "channels first", update the input shape
+        # and channels dimension
+        if K.image_data_format() == "channels_first":
+            inputShape = (depth, height, width)
+            chanDim = 1
+            
+        inputs = Input(shape=(height, width, depth))
+        outputs = exit_flow(middle_flow(entry_flow(inputs)))
+        outputs = Dense(classes, activation='softmax')(outputs)
+        
+        m = Model(inputs, outputs)
+    
+    
+        #print(m.summary())
+        return m
+        
+        
+
+    
+
